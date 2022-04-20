@@ -1,14 +1,14 @@
 library(tidyverse)
-library(dplyr)
 library(tidytext)
 library(purrr)
 library(reshape2)
-library(tm)
 library(qdapRegex) # to remove number in the text
-
+library(textstem) # this will be use for lemmatize string 
 library(stopwords)
-library(tokenizers)
-
+library("spacyr")
+library(stylo)
+library(data.table)
+spacy_initialize(model = "it_core_news_sm")
 #install.packages("stopwords")
 #head(stopwords::stopwords("Italian"), 20) 
 
@@ -51,45 +51,40 @@ names(corpus_it)
 
 fin_corpus<- select(corpus_it, year, text, sender)
 
+
 gt<-levels(fin_corpus$year)
 
 gt
 compt <-0 
+
 for (annee in gt){
   
   
   yer<-filter(fin_corpus,year %in% c(annee))                    
   l <-paste0(yer$text)
   
-  # remove punctuations
+  # remove punctuations, lower case, remove number,  Lemmatize_string an tokinization
+  #and Lemmatize
   
-  l <- gsub('[[:punct:] ]+',' ',l) 
+  parsedtxt <- gsub('[[:punct:] ]+',' ',l) %>%
+    tolower() %>% rm_number()%>%
+    spacy_parse()
   
+  # remove stoping word and contruct the lexical profile
+  o<-parsedtxt$lemma %>%
+    delete.stop.words( stop.words = stopwords::stopwords("Italian"))%>%
+    melt()%>%
+    count(value, sort = TRUE)
+  names(o) <- c("word", annee)
   
-  # Lower case, remove number, tokenization  and remove stoping word 
+  # Lexical profile 
   
-  l<-tolower(l) %>% rm_number() %>%
-    tokenize_words( stopwords = stopwords::stopwords("Italian"))%>%
-    map(unlist)
-  
-  # Lemmetized 
-  
-  # corpus %>% str
-  l <- melt(l)
-  names(l) <- c("word", annee)
   if(compt==0){
-   Corpus <- l %>%
-     count(word, sort = TRUE)
-  names(Corpus) <- c("word", annee)
+   Corpus <- o 
    compt<-1
   }
   else{
-    l<-l %>%
-      count(word, sort = TRUE)
-    
-    names(l) <- c("word",annee )
-    
-    Corpus <-full_join(Corpus,l, by = "word",copy = FALSE)  
+    Corpus <-full_join(Corpus,o, by = "word",copy = FALSE)  
   }
 }
 view(Corpus)
@@ -98,6 +93,13 @@ view(Corpus)
 Corpus[is.na(Corpus)] = 0
 view(Corpus)
 
+
+# Let's save the text profile 
+fwrite(Corpus, "lexical_profile_from_corpus/lexical_profil.csv")
+
+corpus<-read.csv("lexical_profile_from_corpus/lexical_profil.csv", sep=",",encoding = "UTF-8")
+
+view(corpus)
 # Let's convert our dataset as table
 #install.packages("data.table")           # Install and load data.table
 library("data.table")
@@ -109,5 +111,4 @@ out <- as.data.table(Corpus)
 view(out)
 library(ca)
 out<-ca(out)
-str(out)
-levels(out$word)
+

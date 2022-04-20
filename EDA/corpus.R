@@ -5,9 +5,12 @@ library(purrr)
 library(reshape2)
 library(tm)
 library(qdapRegex) # to remove number in the text
-
+library(textstem) # this will be use for lemmatize string 
 library(stopwords)
-library(tokenizers)
+library("spacyr")
+library(stylo)
+spacy_initialize(model = "it_core_news_sm")
+
 setwd("D:/University of Trieste/project/Corpus_analysis")
 #install.packages("stopwords")
 head(stopwords::stopwords("Italian"), 20)
@@ -56,22 +59,41 @@ view(fin_corpus)
 yer<-filter(fin_corpus,year %in% c("1922"))                    
 l <-paste0(yer$text)
   
-# remove punctuations
+# remove punctuations, lower case, remove number,  Lemmatize_string an tokinization
 
-l <- gsub('[[:punct:] ]+',' ',l) 
- 
+parsedtxt <- gsub('[[:punct:] ]+',' ',l) %>%
+  tolower() %>% rm_number()%>%
+  spacy_parse()
 
-# Lower case, remove number, tokenization  and remove stoping word 
+# remove stoping word and contruct the lexical profile
+o<-parsedtxt$lemma %>%
+  delete.stop.words( stop.words = stopwords::stopwords("Italian"))%>%
+  melt()%>%
+  count(value, sort = TRUE)
 
-l<-tolower(l) %>% rm_number() %>%
-  tokenize_words( stopwords = stopwords::stopwords("Italian"))%>%
-  map(unlist)
+# Lexical profile 
 
- # corpus %>% str
-l <- melt(l)
-names(l) <- c("word", "year")
-l<-l %>%
-  count(word, sort = TRUE)
-names(l) <- c("word", "year")
-view(l)
-str(l)
+names(o)=c("word", "year")
+
+
+view(o)
+
+
+
+# https://spacyr.quanteda.io/articles/using_spacyr.html
+
+#https://stackoverflow.com/questions/69271456/problem-with-spacy-initialize-error-in-py-run-file-implfile-local-convert
+
+#spacyr::spacy_install()
+
+
+
+
+#spacy_download_langmodel("it")
+
+#reticulate::use_condaenv("spacy_condaenv", required = TRUE)
+
+
+
+
+spacy_finalize()
