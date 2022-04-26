@@ -9,6 +9,7 @@ library("spacyr")
 library(stylo)
 library(data.table)
 spacy_initialize(model = "it_core_news_sm")
+setwd("D:/University of Trieste/project/Corpus_analysis")
 #install.packages("stopwords")
 #head(stopwords::stopwords("Italian"), 20) 
 
@@ -50,8 +51,8 @@ corpus_it<- dplyr::filter(corpus, mainLanguage %in%c("ITA"))
 names(corpus_it)
 
 fin_corpus<- select(corpus_it, year, text, sender)
-
-
+#fin_corpus<-filter(fin_corpus, !(year %in% c("1921","1924")))
+fin_corpus <-droplevels(fin_corpus)
 gt<-levels(fin_corpus$year)
 
 gt
@@ -66,49 +67,90 @@ for (annee in gt){
   # remove punctuations, lower case, remove number,  Lemmatize_string an tokinization
   #and Lemmatize
   
-  parsedtxt <- gsub('[[:punct:] ]+',' ',l) %>%
+  parsedtxt <- gsub("[^[:alnum:]]", " ", l) %>%
     tolower() %>% rm_number()%>%
     spacy_parse()
   
   # remove stoping word and contruct the lexical profile
   o<-parsedtxt$lemma %>%
-    delete.stop.words( stop.words = stopwords::stopwords("Italian"))%>%
-    melt()%>%
-    count(value, sort = TRUE)
-  names(o) <- c("word", annee)
+    delete.stop.words( stop.words = stopwords::stopwords("Italian"))
+  
+  # remove words which are useless in the bigrams
+
+  
+  f <-rep(annee,length(o))
   
   # Lexical profile 
   
   if(compt==0){
-   Corpus <- o 
+   Corpus <- data.frame(word=o,year=f)
    compt<-1
   }
   else{
-    Corpus <-full_join(Corpus,o, by = "word",copy = FALSE)  
+    Corpus <-rbind(Corpus,data.frame(word=o,year=f))  
   }
 }
-view(Corpus)
+Corpus$word<-as.factor(Corpus$word)
 
-# replacing NA values in data frame
-Corpus[is.na(Corpus)] = 0
-view(Corpus)
+Corpus$year<-as.factor(Corpus$year)
 
+# Let's consider word with a certain number of frequency
+temp <- table(Corpus$word) %>%
+  print
 
-# Let's save the text profile 
-fwrite(Corpus, "lexical_profile_from_corpus/lexical_profil.csv")
+wrd <- temp[temp >= 200] %>%
+  names
+Corpus <- Corpus %>%
+  filter(word %in% wrd)
+str(Corpus)
+#view(Corpus)
 
-corpus<-read.csv("lexical_profile_from_corpus/lexical_profil.csv", sep=",",encoding = "UTF-8")
-
-view(corpus)
-# Let's convert our dataset as table
-#install.packages("data.table")           # Install and load data.table
-library("data.table")
+spacy_finalize()
 
 #corresponding analysis 
-Corpus$word<-as.factor(Corpus$word)
-setDT(Corpus) 
-out <- as.data.table(Corpus)
-view(out)
+
+
+
+
+
+
 library(ca)
-out<-ca(out)
+library(FactoMineR)
+
+ou<-table(Corpus)%>%
+  print
+
+
+out2 <- CA(unclass(ou))
+
+plot(out2,what = c("all","none"))
+
+
+pca1<-prcomp(t(ou), rank. = 2,center=TRUE, scale=FALSE)
+summary(pca1)
+
+
+# Frequency plot 
+
+temp <- Corpus %>%group_by(year) %>% count(word, sort = TRUE)
+
+df<-filter(temp, n>5)
+view(df)
+
+df<-select(df,word, year)
+t <- table(df)%>% 
+  print  
+ou <- CA(unclass(t))
+ca(t)
+Corpus %>%group_by(year) %>% count(word, sort =TRUE)%>%
+  slice_max(n, n = 10) %>% 
+    ungroup() %>%
+    mutate(word = reorder(word, n)) %>%
+    ggplot(aes(n, word, fill = year)) +
+    geom_col(show.legend = FALSE) +
+    facet_wrap(~year, scales = "free_y") +
+    labs(x = "Contribution to sentiment",
+         y = NULL)
+library(wordcloud)
+wordcloud(df$word,max.words = 1000)
 

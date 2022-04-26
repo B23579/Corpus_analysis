@@ -61,9 +61,10 @@ l <-paste0(yer$text)
   
 # remove punctuations, lower case, remove number,  Lemmatize_string an tokinization
 
-parsedtxt <- gsub('[[:punct:] ]+',' ',l) %>%
+parsedtxt <- gsub("[^[:alnum:]]", " ", l) %>% 
   tolower() %>% rm_number()%>%
   spacy_parse()
+
 
 # remove stoping word and contruct the lexical profile
 o<-parsedtxt$lemma %>%
@@ -78,8 +79,41 @@ names(o)=c("word", "year")
 
 view(o)
 
+# remove stoping word and contruct the lexical profile
+o<-parsedtxt$lemma %>%
+  delete.stop.words( stop.words = stopwords::stopwords("Italian"))
 
+l <-rep("1998",length(o))
+f <-rep("2000",length(o))
+f <-rep("2018",length(o))
 
+u<-data.frame(word=o,year=f)
+
+y<-data.frame(word=o,year=f)
+
+y$word<-as.factor(y$word)
+y$year<-as.factor(y$year)
+
+view(m2)
+
+jj<-rbind(n, u)
+
+jj$year <-factor(jj$year)
+ 
+jj$word<-factor(jj$word)
+ 
+ str(n)
+ 
+ 
+ 
+view(n)
+
+t<-table(jj)%>%
+  print
+ca(t)
+t
+view(t)
+view(o)
 # https://spacyr.quanteda.io/articles/using_spacyr.html
 
 #https://stackoverflow.com/questions/69271456/problem-with-spacy-initialize-error-in-py-run-file-implfile-local-convert
@@ -93,7 +127,3 @@ view(o)
 
 #reticulate::use_condaenv("spacy_condaenv", required = TRUE)
 
-
-
-
-spacy_finalize()
