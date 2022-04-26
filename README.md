@@ -2,5 +2,4 @@
 Analysis of Svevo’s letters corpus, machine learning assignment 
 
 # Problem Statement 
-
-During the twentieth century, a pioneer of the psychological novel in italy  and  one of the great Italian novelists named Italo Svevo wrote and received many letters. Those multilingual letters were recorded and saved in a database. The purpose of this project is to analyze those epistolary corpus  to gain insights about topics and sentiment expressed(positive, negative) in his letters. Specifically, this proposal aims to extract new information from the available corpus by examining the relationships between topics, individuals, and emotions, as well as how those relationships evolve over time.
+Italo Svevo, a pioneer of the psychological novel in Italy and one of the greatest Italian novelists, wrote and received letters in multiple languages during the twentieth century. The letters were recorded and stored in a database. Thus, the purpose of this project is to analyze those epistolary corpora to gain insight into topics and sentiments expressed (positive or negative) in his letters. This approach intends to extract information from the corpora by looking at the relationships between subjects, people, and emotions, as well as how those interactions change over time.
