@@ -108,11 +108,11 @@ corpus_t<-tm_map(corpus_t,removeNumbers)
 #remove punctuation
 corpus_t<-tm_map(corpus_t,removePunctuation,preserve_intra_word_dashes = TRUE)
 #remouve all pucntion which is not remouved by remouve puctuation
-corpus_t <- tm_map(corpus_t, removeWords,c("d'","l'","un'", "—'" ))
+corpus_t <- tm_map(corpus_t, removeWords,c("d'","l'","un'", "—'", "«»", "«","»" ))
 # delete white spaces which originate from the removed strings
 corpus_t <- tm_map(corpus_t , stripWhitespace)
 # remove words which are useless in the bigrams
-corpus_t <- tm_map(corpus_t,removeWords,c("devono","moglie","—","-","trieste", "essere", "u","qui", "fffd", "ancora", "volta", "tre", "due", "anni", "dopo", "aver","ultimi", "vuol","dire", "dovrebbe","qualche","giorno", "p", "vista", "punto", "n","mesi", "pochi", "migliaia", "milioni","piazza", "troppo", "tempo","streaming","stato","fatto","fare", "fra","poco","detto"))
+corpus_t <- tm_map(corpus_t,removeWords,c("devono","moglie","_","-","»","trieste", "essere", "u","qui", "fffd", "ancora", "volta", "tre", "due", "anni", "dopo", "aver","ultimi", "vuol","dire", "dovrebbe","qualche","giorno", "p", "vista", "punto", "n","mesi", "pochi", "migliaia", "milioni","piazza", "troppo", "tempo","streaming","stato","fatto","fare", "fra","poco","detto"))
 # remove stopwords from "itastopwords.rda" file
 corpus_t <- tm_map(corpus_t, removeWords, itastopwords)
 # remove default R stopwords for italian language
@@ -153,3 +153,73 @@ tmResult <- posterior(topicModel)
 attributes(tmResult)
 tmResult$topics
 terms(topicModel, 20)
+
+# have a look a some of the results (posterior distributions)
+tmResult <- posterior(topicModel)
+# format of the resulting object
+attributes(tmResult)
+tmResult$topics
+terms(topicModel, 50)
+
+topic = 1
+words = posterior(topicModel)$terms[topic, ]
+topwords = head(sort(words, decreasing = T), n=50)
+head(topwords)
+
+library(wordcloud)
+wordcloud(names(topwords), topwords)
+
+#We can also look at the topics per document, to find the top documents per topic:
+
+#Topic proportions over time
+
+tmResult <- posterior(topicModel)
+theta <- tmResult$topics
+beta <- tmResult$terms
+topicNames <- apply(terms(topicModel, 2), 2, paste, collapse = " ")  # reset topicnames
+
+topicNames
+
+k<-5 # number of topic
+
+# append decade information for aggregation
+#fin_corpus$year <- paste0(substr(fin_corpus$year, 0, 3), "0")
+# get mean topic proportions per decade
+topic_proportion_per_decade <- aggregate(theta, by = list(decade = fin_corpus$year),FUN=mean)
+# set topic names to aggregated columns
+colnames(topic_proportion_per_decade)[2:(k+1)] <- topicNames
+# reshape data frame
+vizDataFrame <- melt(topic_proportion_per_decade, id.vars = "decade")
+# plot topic proportions per decade as bar plot
+ggplot(vizDataFrame, aes(x=decade, y=value, fill=variable)) + 
+  geom_bar(stat = "identity") + ylab("proportion") + 
+  scale_fill_manual(values = paste0(alphabet(20), "FF"), name = "decade") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+theta
+view(vizDataFrame)
+
+view(topic_proportion_per_decade)
+
+heatmap(as.matrix(topic_proportion_per_decade[-1]))
+
+fin_corpus$year
+as.Date(as.numeric(fin_corpus$year))
+
+as.integer()
+fin_corpus$year
+
+# append decade information for aggregation
+#fin_corpus$year <- paste0(substr(fin_corpus$year, 0, 3), "0")
+# get mean topic proportions per decade
+topic_proportion_per_sender <- aggregate(theta, by = list(decade = fin_corpus$sender),FUN=mean)
+# set topic names to aggregated columns
+colnames(topic_proportion_per_sender)[2:(k+1)] <- topicNames
+# reshape data frame
+vizDataFrame <- melt(topic_proportion_per_sender, id.vars = "decade")
+# plot topic proportions per decade as bar plot
+ggplot(vizDataFrame, aes(x=decade, y=value, fill=variable)) + 
+  geom_bar(stat = "identity") + ylab("proportion") + 
+  scale_fill_manual(values = paste0(alphabet(20), "FF"), name = "decade") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
