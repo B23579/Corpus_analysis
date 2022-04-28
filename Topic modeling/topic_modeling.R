@@ -66,6 +66,11 @@ l <-as.character(paste0(fin_corpus$text))
 parsedtxt <- gsub("[^[:alnum:]]", " ", l) %>%
   tolower() %>% rm_number()
 
+length(parsedtxt)
+fin_corpus$text<-parsedtxt
+
+
+
 # Let's transforme the text to tible 
 library(stm)
 library(quanteda)
@@ -241,13 +246,13 @@ corpus_t<-tm_map(ll,tolower)
 # remouve number
 corpus_t<-tm_map(corpus_t,removeNumbers)
 #remove punctuation
-corpus_t<-tm_map(corpus_t,removePunctuation)
+corpus_t<-tm_map(corpus_t,removePunctuation,preserve_intra_word_dashes = TRUE)
 #remouve all pucntion which is not remouved by remouve puctuation
-corpus_t <- tm_map(corpus_t, removeWords,c("d'","l'","un'"))
+corpus_t <- tm_map(corpus_t, removeWords,c("d'","l'","un'", "—'" ))
 # delete white spaces which originate from the removed strings
 corpus_t <- tm_map(corpus_t , stripWhitespace)
 # remove words which are useless in the bigrams
-corpus_t <- tm_map(corpus_t,removeWords,c("devono", "essere", "u","qui", "fffd", "ancora", "volta", "tre", "due", "anni", "dopo", "aver","ultimi", "vuol","dire", "dovrebbe","qualche","giorno", "p", "vista", "punto", "n","mesi", "pochi", "migliaia", "milioni","piazza", "troppo", "tempo","streaming","stato","fatto","fare", "fra","poco","detto"))
+corpus_t <- tm_map(corpus_t,removeWords,c("devono","—","-","trieste", "essere", "u","qui", "fffd", "ancora", "volta", "tre", "due", "anni", "dopo", "aver","ultimi", "vuol","dire", "dovrebbe","qualche","giorno", "p", "vista", "punto", "n","mesi", "pochi", "migliaia", "milioni","piazza", "troppo", "tempo","streaming","stato","fatto","fare", "fra","poco","detto"))
 # remove stopwords from "itastopwords.rda" file
 corpus_t <- tm_map(corpus_t, removeWords, itastopwords)
 # remove default R stopwords for italian language
@@ -255,6 +260,67 @@ corpus_t <- tm_map(corpus_t, removeWords, stopwords("italian"))
 # remove proper nouns
 corpus_t <- tm_map(corpus_t, removeWords, row.names(vocabolarioNomiPropri))
 
-inspect(corpus_t[1:2])
 dtm1=DocumentTermMatrix(corpus_t)
 inspect(dtm1)
+
+#Modeling step
+# remove sparse terms 
+
+dtm2.sparse<-removeSparseTerms(dtm1, 1-(100/826))
+inspect(dtm2.sparse)
+
+# UPPER-BOUND: remove the most frequent words (i.e. those whose percentile is greater than 0.975)
+mat_dtm<-as.matrix(dtm2.sparse)
+
+
+dtm_lda1=LDA(dtm1,k=5,control = list(seed = 122234))
+
+ldaOut.terms <- as.matrix(terms(dtm_lda1,6))
+ldaOut.terms
+
+
+# create models with different number of topics
+result <- ldatuning::FindTopicsNumber(
+  dtm1,
+  topics = seq(from = 2, to = 20, by = 1),
+  metrics = c("CaoJuan2009",  "Deveaud2014"),
+  method = "Gibbs",
+  control = list(seed = 77),
+  verbose = TRUE
+)
+
+FindTopicsNumber_plot(result)
+
+# number of topics
+K <- 5
+# set random number generator seed
+set.seed(9161)
+# compute the LDA model, inference via 1000 iterations of Gibbs sampling
+topicModel <- LDA(dtm1, K, method="Gibbs", control=list(iter = 2000, verbose = 25))
+
+
+# have a look a some of the results (posterior distributions)
+tmResult <- posterior(topicModel)
+# format of the resulting object
+attributes(tmResult)
+tmResult$topics
+terms(topicModel, 50)
+
+topic = 1
+words = posterior(topicModel)$terms[topic, ]
+topwords = head(sort(words, decreasing = T), n=50)
+head(topwords)
+
+library(wordcloud)
+wordcloud(names(topwords), topwords)
+
+#We can also look at the topics per document, to find the top documents per topic:
+
+topic.docs = posterior(topicModel)$topics[, topic] 
+topic.docs = sort(topic.docs, decreasing=T)
+head(topic.docs)
+
+docs = docvars(dfm)[match(rownames(dtm), docnames(dfm)),]
+tpp = aggregate(posterior(m)$topics, by=docs["President"], mean)
+rownames(tpp) = tpp$President
+heatmap(as.matrix(tpp[-1]))

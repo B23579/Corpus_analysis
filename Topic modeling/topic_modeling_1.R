@@ -90,10 +90,14 @@ fin_corpus <-droplevels(fin_corpus)
 # to useful files for italians stopwords and proper nouns in italian language
 load("itastopwords.rda")
 load("vocabolarioNomiPropri.rda")
-corp<- fin_corpus %>%select(year,text)%>%
-  group_by(year) %>%
-  paste0()
 
+l <-as.character(paste0(fin_corpus$text))
+parsedtxt <- gsub("[^[:alnum:]]", " ", l) %>%
+  tolower() %>% rm_number()
+fin_corpus$text<-parsedtxt
+
+library(data.table)
+fwrite(fin_corpus, "sentimental_analysis/half_clean_corpus.csv")
 
 ll<-Corpus(VectorSource(fin_corpus$text))
 print(ll)
@@ -152,7 +156,7 @@ tmResult <- posterior(topicModel)
 # format of the resulting object
 attributes(tmResult)
 tmResult$topics
-terms(topicModel, 20)
+terms(topicModel, 30)
 
 # have a look a some of the results (posterior distributions)
 tmResult <- posterior(topicModel)
@@ -176,8 +180,9 @@ wordcloud(names(topwords), topwords)
 tmResult <- posterior(topicModel)
 theta <- tmResult$topics
 beta <- tmResult$terms
-topicNames <- apply(terms(topicModel, 2), 2, paste, collapse = " ")  # reset topicnames
+topicNames <- apply(, 2, paste, collapse = " ")  # reset topicnames
 
+topicNames <- c("Work","Travel","Severo Book","Opinion","Daily life")
 topicNames
 
 k<-5 # number of topic
@@ -223,3 +228,4 @@ ggplot(vizDataFrame, aes(x=decade, y=value, fill=variable)) +
   scale_fill_manual(values = paste0(alphabet(20), "FF"), name = "decade") + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
+view(vizDataFrame)
