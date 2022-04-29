@@ -7,7 +7,7 @@ Italo Svevo, a pioneer of the psychological novel in Italy and one of the greate
 # Algorithms use to Approch the problem 
 The number of topics discussed in letters will be determine by using a Correspondance Analysis (CA). A visualization technique for identifying and displaying the relationship between categories. For the topic modeling, Latent Dirichlet allocation (LDA) method  will be apply for fitting topic model. 
 
-To find the emotion and sentiment express in each letter, the FEEL-IT (Emotion and Sentiment Classification for Italian Language) model building in python release in 2021 will be used.
+To find the emotion and sentiment express in each letter, the [FEEL-IT](https://github.com/MilaNLProc/feel-it) (Emotion and Sentiment Classification for Italian Language) model building in python release in 2021 will be used.
 
 # Data Description
 
