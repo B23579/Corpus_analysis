@@ -16,5 +16,5 @@ The Svevo letter corpus dataset contains a total of 894 letters written by Italo
 ## Result 
 report will be publish in juin
 
-![fg]([./emotion_proportion_by_topic.png]) 
+![fg]([./topic_proportion_evolution_per_yer.png]) 
 ![fg](./emotion_proportion_by_topic.png)
