@@ -15,7 +15,8 @@ The Svevo letter corpus dataset contains a total of 894 letters written by Italo
 
 ## Result 
 report will be publish in juin
-<img src="https://github.com/B23579/Sueza_project/blob/main/word_cloud/Bassa.png" width="360" height="360">
+
+<img src="https://github.com/B23579/Corpus_analysis/blob/main/topic_proportion_evolution_per_yer.png" width="360" height="360">
 ![fg]([./topic_proportion_evolution_per_yer.png]) 
 
 ![fg](./emotion_proportion_by_topic.png)
